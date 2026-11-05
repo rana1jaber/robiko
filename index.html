@@ -53,12 +53,13 @@
     <section class="panel lesson" id="lesson"></section>
 
     <section class="panel editor">
+      <div class="task" id="taskBox"></div>
       <div class="ed-bar">
         <span class="fname">robot.js</span>
         <div class="ed-actions">
           <button class="btn primary" id="runBtn" type="button"><span class="tri"></span><span id="runLabel">تشغيل</span> <kbd>Ctrl+Enter</kbd></button>
           <button class="btn" id="hintBtn" type="button">تلميح</button>
-          <button class="btn" id="solBtn" type="button">الحل</button>
+          <button class="btn" id="solBtn" type="button" hidden>الحل</button>
           <button class="btn" id="resetBtn" type="button">كود البداية</button>
         </div>
       </div>
@@ -92,7 +93,7 @@
     </section>
 
     <section class="panel console">
-      <div class="c-head"><strong>رسائل الروبوت</strong><span>console</span></div>
+      <div class="c-head"><strong>رسائل الروبوت</strong><span>console</span><button class="btn to-code" id="toCode" type="button">الرجوع للكود</button></div>
       <ul class="log" id="log"></ul>
     </section>
     </div>

@@ -95,10 +95,10 @@ const PLANET_GRAD = [
   ["#5FD6DD", "#0F5560"], ["#FF9AA6", "#5AA9FF"], ["#F7BE5E", "#7F420C"],
   ["#79E3A4", "#1A6040"], ["#A8DEFF", "#244F7C"], ["#FFF3B0", "#FF8A2A"]
 ];
-function planetArt(i, R) {
-  const cp = `url(#clip${i})`, g = `url(#pg${i})`;
+function planetArt(i, R, ns = "") {
+  const cp = `url(#${ns}clip${i})`, g = `url(#${ns}pg${i})`;
   const base = `<circle r="${R}" fill="${g}"/>`;
-  const shade = `<circle r="${R}" fill="url(#shade)"/>`;
+  const shade = `<circle r="${R}" fill="url(#${ns}shade)"/>`;
   switch (i) {
     case 0: // first command: rocky moon with a beacon
       return `<g clip-path="${cp}">${base}<circle cx="${-R*.35}" cy="${R*.2}" r="${R*.22}" fill="#000" opacity=".18"/><circle cx="${R*.3}" cy="${-R*.3}" r="${R*.13}" fill="#000" opacity=".2"/><circle cx="${R*.4}" cy="${R*.45}" r="${R*.1}" fill="#000" opacity=".16"/>${shade}</g>
@@ -119,8 +119,8 @@ function planetArt(i, R) {
         <g transform="rotate(-18)">${moon}</g>
         <g clip-path="${cp}">${base}<circle cx="${-R*.25}" cy="${R*.15}" r="${R*.28}" fill="#FFD27A" opacity=".25"/>${shade}</g>
         <path d="M${-R*1.55} 0 A${R*1.55} ${R*.4} 0 0 0 ${R*1.55} 0" transform="rotate(-18)" fill="none" stroke="#FFE2A8" stroke-width="${R*.12}" opacity=".85"/>
-        <clipPath id="ringFront"><rect x="${-R*2}" y="0" width="${R*4}" height="${R*2}"/></clipPath>
-        <g transform="rotate(-18)" clip-path="url(#ringFront)">${moon}</g>`;
+        <clipPath id="${ns}ringFront"><rect x="${-R*2}" y="0" width="${R*4}" height="${R*2}"/></clipPath>
+        <g transform="rotate(-18)" clip-path="url(#${ns}ringFront)">${moon}</g>`;
     }
     case 6: // functions: machine world with gears
       return `<g clip-path="${cp}">${base}<g transform="translate(${-R*.2} ${-R*.1})"><path class="spin slow" d="${gearPath(R*.42, R*.55, 9)}" fill="#C9F5DA" opacity=".4"/><circle r="${R*.16}" fill="${g}"/></g><g transform="translate(${R*.55} ${R*.5})"><path class="spin slow rev" d="${gearPath(R*.22, R*.3, 7)}" fill="#C9F5DA" opacity=".35"/></g>${shade}</g>`;
@@ -128,7 +128,7 @@ function planetArt(i, R) {
       return `<g clip-path="${cp}">${base}${shade}</g>
         ${[0,1,2,3].map(k=>{const a=(-160 + k*22)*Math.PI/180, x=Math.cos(a)*R*1.45, y=Math.sin(a)*R*1.45; return `<rect x="${x-8}" y="${y-8}" width="16" height="16" rx="4" fill="#E8F0EC" opacity="${.95-k*.12}"/><text x="${x}" y="${y+4}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" font-weight="600" fill="#244F7C">${k}</text>`;}).join("")}`;
     case 8: // final: a star
-      return `<circle r="${R*1.55}" fill="url(#glow)" class="corona"/>
+      return `<circle r="${R*1.55}" fill="url(#${ns}glow)" class="corona"/>
         ${Array.from({length:12},(_,k)=>`<path d="M0 ${-R*1.05} L${R*.09} ${-R*1.32} L${-R*.09} ${-R*1.32}Z" fill="#FFD27A" transform="rotate(${k*30})"/>`).join("")}
         <g clip-path="${cp}">${base}<circle cx="${-R*.3}" cy="${-R*.3}" r="${R*.5}" fill="#FFF" opacity=".25"/></g>`;
   }
@@ -162,8 +162,10 @@ function missionDots(p, R) {
 }
 function botAt(p, k) {
   if (focusP === p) return focusDot(p, k);
-  const { pts, R } = mapGeo, c = pts[p], d = missionDots(p, R);
-  return d.length ? [c[0] + d[k][0], c[1] + d[k][1]] : [c[0] - R * .62, c[1] - R * .79];
+  // in the galaxy view Robiko stands on the planet's top edge; planets 1 and 8 have
+  // a beacon and array tiles at the very top, so it stands a little to the side there
+  const { pts, R } = mapGeo, c = pts[p], lean = p === 0 || p === 7 ? .44 : 0;
+  return [c[0] + R * Math.sin(lean), c[1] - R * Math.cos(lean)];
 }
 function renderMap(from = null) {
   const frame = $("mapFrame");
@@ -257,7 +259,7 @@ function renderMap(from = null) {
     setTimeout(async () => {
       await setFocus(cp, true);
       traveling = false;
-      if (!reduce) botSay(pick(["اضغطي عليّ! 👋", "هلا! 👋", "جاهزة نبرمج؟", "اختاري مهمة!"]), 2600);
+      if (!reduce) botSay(pick(["هلا! 👋", "جاهزة نبرمج؟", "يلا نبدأ!"]), 2600);
     }, reduce ? 0 : 350);
   }
 }
@@ -360,7 +362,7 @@ let focusP = null;
 function focusGeom(p) {
   const { W, H, pts, R, tall } = mapGeo;
   const Rf = tall ? W * .27 : Math.min(W, H) * .27;
-  const fy = tall ? Math.max(Rf + 110, Math.min(H - Rf - 120, pts[p][1])) : H / 2 + 14;
+  const fy = tall ? Math.max(Rf + (p === 0 ? 134 : 110), Math.min(H - Rf - 120, pts[p][1])) : H / 2 + 14 + (p === 7 ? 44 : 0);
   return { fx: W / 2, fy, Rf, S: Rf / R };
 }
 function zCorners(Rf) { const a = Rf * .56, b = Rf * .42; return [[-a, -b], [a, -b], [-a, b], [a, b]]; }
@@ -418,6 +420,9 @@ function focusMarkup(p) {
   const cp = LEVELS[cur].p, cm = LEVELS[cur].m;
   const reached = planetDone(p) ? T : (p === cp ? stops[cm] : 0);
   const fpos = k => n === 4 ? zCorners(Rf)[k] : zAt(stops[k], Rf);
+  // some planets have decorations above the sphere: keep the title clear of them, inside the frame
+  const headroom = p === 0 ? (R + 22) * S : p === 7 ? (R * 1.45 + 8) * S : p === 8 ? R * 1.32 * S : Rf;
+  const titleY = Math.max(-headroom - (mapGeo.tall ? 14 : 18), (mapGeo.tall ? 48 : 60) - fy);
   const roads = stops.slice(0, -1).map((_, k) => {
     if (!store.done.includes(pl.missions[k].id)) return "";
     const [x1, y1] = fpos(k), [x2, y2] = fpos(k + 1), d = `M${x1.toFixed(1)} ${y1.toFixed(1)} L${x2.toFixed(1)} ${y2.toFixed(1)}`;
@@ -431,13 +436,13 @@ function focusMarkup(p) {
       : `<path d="M0 -8 L5 -2 L0 3 L-5 -2Z" fill="#9FB8FF" fill-opacity=".45" stroke="#FFFFFF" stroke-opacity=".9" stroke-width="1.3"/><circle cy="-2.5" r="1.2" fill="#FFF" opacity=".8"/>`;
     return `<g class="mdot ${st}" data-p="${p}" data-k="${k}" tabindex="0" role="button" aria-label="المهمة ${k + 1}: ${m.title}" transform="translate(${x.toFixed(1)} ${y.toFixed(1)})"><title>المهمة ${k + 1}: ${m.title}</title>
         <circle r="26" fill="transparent"/><g transform="scale(${mapGeo.tall ? 1.3 : 1.8})">${mark}</g></g>
-      <text class="f-label ${st === "cur" ? "cur" : ""}" x="${x.toFixed(1)}" y="${(y + (mapGeo.tall ? 22 : 30)).toFixed(1)}" text-anchor="middle" direction="rtl">${k + 1}. ${m.title}</text>`;
+      <text class="f-label ${st === "cur" ? "cur" : ""}" x="${x.toFixed(1)}" y="${(y + (mapGeo.tall ? 22 + (n === 4 && k % 2 ? 15 : 0) : 30)).toFixed(1)}" text-anchor="middle" direction="rtl">${k + 1}. ${m.title}</text>`;
   }).join("");
   return `<rect class="fdim" x="0" y="0" width="${W}" height="${H}" fill="#02060F" opacity=".8"/>
     <g class="fplanet" transform="translate(${fx} ${fy}) scale(${S.toFixed(3)})"><circle r="${R * 1.3}" fill="url(#fglow)"/>${planetArt(p, R)}</g>
     <g class="fz" transform="translate(${fx} ${fy})">
-      <text class="f-sub" y="${-Rf - (mapGeo.tall ? 64 : 52)}" text-anchor="middle">كوكب ${p + 1} · ${pl.concept}</text>
-      <text class="f-title" y="${-Rf - (mapGeo.tall ? 40 : 22)}" text-anchor="middle">${pl.title}</text>
+      <text class="f-sub" y="${titleY - (mapGeo.tall ? 24 : 30)}" text-anchor="middle">كوكب ${p + 1} · ${pl.concept}</text>
+      <text class="f-title" y="${titleY}" text-anchor="middle">${pl.title}</text>
       <g class="roads">${roads}</g>
       ${dots}
     </g>`;
@@ -477,7 +482,7 @@ async function setFocus(p, animate) {
       fz.setAttribute("opacity", Math.max(0, (t - .6) / .4).toFixed(2));
     });
   }
-  fp.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
+  fz.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
   if (showBot) { placeMapBot(focusDot(p, LEVELS[cur].p === p ? LEVELS[cur].m : k)); bot.style.opacity = 1; }
 }
 async function clearFocus(animate) {
@@ -530,6 +535,7 @@ function moveBot(from, to) {
     } else {
       $("arriveText").textContent = `المهمة ${to.k + 1}: ${PLANETS[to.p].missions[to.k].title}`;
     }
+    startTarget = null; $("arriveGo").textContent = "ابدئي المهمة";
     $("arriveBar").hidden = false; $("arriveGo").focus({ preventScroll: true });
   };
   if (reduce) { if (flying) { clearFocus(false); setFocus(to.p, false); } arrive(); return; }
@@ -616,6 +622,17 @@ async function zoomTo(p) {
   traveling = false;
   if (LEVELS[cur].p !== p) botSay("", 1);
 }
+/* the map always offers one clear way into the game */
+let startTarget = null;
+function showStartBar() {
+  const firstOpen = LEVELS.findIndex((_, i) => !isDone(i));
+  const allDone = firstOpen < 0, first = !store.done.length && cur === 0;
+  startTarget = !allDone && isDone(cur) ? firstOpen : cur;
+  const l = LEVELS[startTarget];
+  $("arriveText").textContent = allDone ? "خلّصتي المجرة كاملة! تقدرين تراجعين أي مهمة." : first ? `أول مهمة: ${l.title}` : `مهمتك الحالية: ${l.title}`;
+  $("arriveGo").textContent = allDone ? "راجعي المهمة" : first ? "ابدئي المهمة الأولى" : "كملي من حيث وقفتي";
+  $("arriveBar").hidden = false;
+}
 function showMap(from = null) {
   if (runToken) runToken.cancel = true;
   stopPlayer();
@@ -623,6 +640,7 @@ function showMap(from = null) {
   $("arriveBar").hidden = true;
   window.scrollTo({ top: 0 });
   renderMap(from);
+  if (!from) showStartBar();
 }
 function showGame() {
   $("mapView").hidden = true; $("gameView").hidden = false; $("mapBtn").hidden = false;
@@ -630,7 +648,11 @@ function showGame() {
   startPlayer();
 }
 $("mapBtn").addEventListener("click", () => showMap());
-$("arriveGo").addEventListener("click", showGame);
+$("arriveGo").addEventListener("click", () => {
+  if (startTarget !== null && startTarget !== cur) loadLevel(startTarget);
+  startTarget = null;
+  showGame();
+});
 window.addEventListener("resize", () => {
   if (!$("mapView").hidden && !traveling && ($("mapFrame").clientWidth < 640) !== mapMode) renderMap();
 });
@@ -650,9 +672,10 @@ function renderLesson() {
     <div class="eyebrow">كوكب ${l.p + 1} · ${pl.title}${pl.missions.length > 1 ? ` · المهمة ${l.m + 1} من ${pl.missions.length}` : ""}</div>
     <nav class="mtabs" id="mtabs" aria-label="مهمات الكوكب"></nav>
     <h2>${l.title}</h2>
-    <section class="stage" aria-label="روبيكو يشرح">
+    <section class="stage" id="stage" aria-label="روبيكو يشرح">
       <div class="sbubble" id="sbubble" title="اضغطي لإكمال الجملة"><span class="txt" id="stxt"></span><span class="tail" id="stail"></span></div>
       <div class="floor" id="floor">
+        <svg class="ground" id="ground" aria-hidden="true"></svg>
         <div class="screen" id="pscreen" hidden><div class="bar"><i></i><i></i><i></i></div><pre id="psample"></pre></div>
         <div class="actor" id="actor" aria-hidden="true">
           <svg viewBox="0 0 100 130">
@@ -687,8 +710,9 @@ function renderLesson() {
         <button class="ibtn play" type="button" id="pPlay" aria-label="إيقاف مؤقت">❚❚</button>
         <button class="ibtn" type="button" id="pNext" aria-label="التالي">◀</button>
         <div class="segs" id="psegs"></div>
-        <button class="ibtn" type="button" id="pVoice" aria-label="صوت روبيكو" title="صوت روبيكو">🗣️</button>
-        <button class="ibtn" type="button" id="pText" aria-label="النص كامل" title="النص كامل" aria-pressed="false">📄</button>
+        <button class="ibtn" type="button" id="pVoice">تشغيل الصوت</button>
+        <button class="ibtn" type="button" id="pText" aria-pressed="false">النص كامل</button>
+        <button class="ibtn" type="button" id="pSkip">تخطي الشرح</button>
       </div>
       <div class="voice-help" id="voiceHelp" hidden></div>
       <div class="transcript" id="ptranscript" hidden>
@@ -696,7 +720,7 @@ function renderLesson() {
         <pre class="sample">${hl(l.sample)}</pre>
       </div>
     </section>
-    <div class="task"><strong>المهمة</strong><span>${l.task}</span></div>
+    <button class="btn replay" type="button" id="pReplay" hidden>أعيدي الشرح</button>
     <details class="ref">
       <summary>كل أوامر الروبوت</summary>
       <div class="ref-grid">
@@ -709,13 +733,22 @@ function renderLesson() {
         <code>console.log(قيمة)</code><span>يطبع في الكونسول (رسائل الروبوت)</span>
       </div>
     </details>`;
+  $("taskBox").innerHTML = `<strong>المهمة</strong><span>${l.task}</span>`;
   renderMissionTabs();
   startPlayer();
 }
 
 /* ---------- Robiko presenter ---------- */
-let player = null, voiceOn = true;
-try { voiceOn = localStorage.getItem("robiko.voice") !== "off"; } catch (e) {}
+let player = null, voiceOn = false; // spoken explanation is opt-in
+try { voiceOn = localStorage.getItem("robiko.voice") === "on"; } catch (e) {}
+const closedStages = new Set();
+function closeStage() {
+  closedStages.add(cur);
+  stopPlayer();
+  const s = $("stage"), r = $("pReplay");
+  if (s) s.hidden = true;
+  if (r) r.hidden = false;
+}
 let arVoice = null;
 function findVoice() {
   try {
@@ -734,31 +767,37 @@ function stopPlayer() {
   const pr = $("actor"); if (pr) pr.classList.remove("talking");
   player = null;
 }
-function startPlayer() {
+function startPlayer(force = false) {
   stopPlayer();
   if ($("gameView").hidden) return;
+  const closed = !force && (isDone(cur) || closedStages.has(cur));
+  $("stage").hidden = closed; $("pReplay").hidden = !closed;
+  if (closed) return;
   const l = LEVELS[cur];
   const slides = l.lesson.map(h => ({ html: h }));
   slides.push({ html: "شوفي المثال هذا 👇 اقرئيه سطر سطر، وانتبهي للتعليقات بعد <code>//</code>.", code: l.sample });
   slides.push({ html: `<b>مهمتك:</b> ${l.task} يلا جربي في المحرر! 💪` });
-  player = { slides, i: 0, playing: true, token: {}, seen: new Set() };
+  player = { slides, i: 0, playing: false, token: {}, seen: new Set() };
   $("psegs").innerHTML = slides.map((_, k) => `<button type="button" data-k="${k}" aria-label="الجزء ${k + 1}"></button>`).join("");
   renderVoiceBtn();
   const a = actorEl(), f = $("floor");
-  a.style.transition = "none"; a.style.left = (f.clientWidth - a.offsetWidth) * 1.12 + "px"; a.dataset.x = 1.12;
+  drawGround();
+  a.style.transition = "none"; placeActor(SPOTS[0]);
   void a.offsetWidth; a.style.transition = "";
   showSlide(0);
 }
 function renderVoiceBtn() {
   const b = $("pVoice"); if (!b) return;
-  b.setAttribute("aria-pressed", arVoice && voiceOn && soundOn ? "true" : "false");
-  b.title = voiceOn ? "كتم صوت روبيكو" : "تشغيل صوت روبيكو";
+  const on = !!(arVoice && voiceOn && soundOn);
+  b.setAttribute("aria-pressed", on ? "true" : "false");
+  b.textContent = on ? "كتم الصوت" : "تشغيل الصوت";
 }
 function renderPlayBtn() {
   const b = $("pPlay"); if (!b || !player) return;
   const atEnd = !player.playing && player.i === player.slides.length - 1 && player.done;
   b.textContent = atEnd ? "↻" : player.playing ? "❚❚" : "▶";
-  b.setAttribute("aria-label", atEnd ? "إعادة الشرح" : player.playing ? "إيقاف مؤقت" : "تشغيل");
+  b.setAttribute("aria-label", atEnd ? "إعادة الشرح" : player.playing ? "إيقاف التشغيل التلقائي" : "تشغيل تلقائي");
+  b.title = b.getAttribute("aria-label");
 }
 function typeInto(el, html, token, perTick, onDone) {
   el.innerHTML = html;
@@ -785,6 +824,30 @@ function typeInto(el, html, token, perTick, onDone) {
 }
 const SPOTS = [.74, .1, .46, .82, .2, .6, .32];
 function actorEl() { return $("actor"); }
+/* the explanation stage stands on the current planet: its curved surface is the floor */
+const GROUND_BOX = 96, GROUND_H = 58, STAGE_PAD = 14;
+const groundR = W => W * 1.6;
+function drawGround() {
+  const g = $("ground"), f = $("floor");
+  if (!g || !f || !f.clientWidth) return;
+  const p = LEVELS[cur].p, W = f.clientWidth, R = groundR(W), c = PLANET_GRAD[p];
+  g.innerHTML = `<defs>
+      <radialGradient id="s-pg${p}" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="${c[0]}"/><stop offset="1" stop-color="${c[1]}"/></radialGradient>
+      <clipPath id="s-clip${p}"><circle r="${R}"/></clipPath>
+      <radialGradient id="s-shade" cx="30%" cy="28%" r="80%"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".55"/></radialGradient>
+      <radialGradient id="s-glow"><stop offset=".4" stop-color="#FFC75A" stop-opacity=".55"/><stop offset="1" stop-color="#FF8A2A" stop-opacity="0"/></radialGradient>
+    </defs>
+    <g transform="translate(${W / 2 + STAGE_PAD} ${GROUND_BOX - GROUND_H + R})">${planetArt(p, R, "s-")}</g>`;
+}
+function placeActor(x) {
+  const a = actorEl(), f = $("floor");
+  if (!a || !f) return;
+  const W = f.clientWidth, w = a.offsetWidth, R = groundR(W), dx = (W - w) * x + w / 2 - W / 2;
+  a.style.left = (W - w) * x + "px";
+  a.style.bottom = (GROUND_H - (R - Math.sqrt(R * R - dx * dx)) - 5) + "px"; // shadow rests on the surface
+  a.style.transform = `rotate(${(Math.atan2(dx, R) * 180 / Math.PI).toFixed(1)}deg)`; // upright on the curve
+  a.dataset.x = x;
+}
 function setPose(...cls) {
   const a = actorEl(); if (!a) return;
   a.classList.remove("point", "think", "happy", "smile", "wow", "g-wave", "g-explain", "g-shrug");
@@ -804,10 +867,10 @@ function walkTo(x, tok) {
   return new Promise(res => {
     const a = actorEl(), f = $("floor"); if (!a || !f) return res();
     const W = f.clientWidth, w = a.offsetWidth, cur = parseFloat(a.dataset.x || "-1");
-    if (Math.abs(cur - x) < .02 || reduce) { a.style.left = (W - w) * x + "px"; a.dataset.x = x; moveTail(x); return res(); }
+    if (Math.abs(cur - x) < .02 || reduce) { placeActor(x); moveTail(x); return res(); }
     a.classList.toggle("flip", x < cur);
     a.classList.add("walking"); setPose();
-    a.style.left = (W - w) * x + "px"; a.dataset.x = x; moveTail(x);
+    placeActor(x); moveTail(x);
     let steps = 0;
     const stepT = setInterval(() => { if (tok.dead) return; if (steps++ % 2 === 0) sfx("step"); }, 140);
     setTimeout(() => { clearInterval(stepT); a.classList.remove("walking"); res(); }, 960);
@@ -835,6 +898,8 @@ async function showSlide(i) {
   const tok = P.token, a = actorEl(), txt = $("stxt"), scr = $("pscreen"), pre = $("psample"), floor = $("floor");
   [...$("psegs").children].forEach((b, k) => { b.className = k === i ? "on" : P.seen.has(k) ? "seen" : ""; });
   $("pPrev").disabled = i === 0; $("pNext").disabled = i === P.slides.length - 1;
+  $("pSkip").textContent = i === P.slides.length - 1 ? "ابدئي الكتابة" : "تخطي الشرح";
+  $("pSkip").classList.toggle("primary", i === P.slides.length - 1);
   renderPlayBtn();
   a.classList.remove("talking");
   const codeAt = P.slides.findIndex(x => x.code), last = i === P.slides.length - 1;
@@ -843,21 +908,25 @@ async function showSlide(i) {
   else {
     if (scr.hidden) { scr.hidden = false; }
     if (!sl.code) pre.innerHTML = hl(P.slides[codeAt].code);
-    floor.style.minHeight = Math.max(150, scr.offsetHeight + 24) + "px";
+    floor.style.minHeight = Math.max(200, scr.offsetHeight + 24) + "px";
   }
   const target = i >= codeAt ? .97 : SPOTS[i % SPOTS.length];
   txt.innerHTML = '<span class="caret"></span>';
-  await walkTo(target, tok);
-  if (tok.dead) return;
-  // face the screen when it is up, otherwise face the middle
-  a.classList.toggle("flip", i >= codeAt ? true : target > .5);
   const plainT = plain(sl.html);
-  if (sl.code) { setPose("point", "wow"); sfx("pop"); }
-  else if (last) { setPose("happy"); oneShot("jump", 1150); sfx("win"); }
-  else if (/؟/.test(plainT)) setPose("think");
-  else setPose();
-  a.classList.add("talking");
-  if (!sl.code && !last) gestureLoop(tok);
+  // the text starts right away; Robiko walks to its spot while it appears
+  walkTo(target, tok).then(() => {
+    if (tok.dead) return;
+    // face the screen when it is up, otherwise face the middle
+    a.classList.toggle("flip", i >= codeAt ? true : target > .5);
+    if (sl.code) { setPose("point", "wow"); sfx("pop"); }
+    else if (last) { setPose("happy"); oneShot("jump", 1150); sfx("win"); }
+    else if (/؟/.test(plainT)) setPose("think");
+    else setPose();
+    if (!P.done) {
+      a.classList.add("talking");
+      if (!sl.code && !last) gestureLoop(tok);
+    }
+  });
   let typed = false, spoke = !(voiceOn && soundOn && arVoice);
   const settle = () => {
     if (tok.dead || !typed || !spoke) return;
@@ -870,12 +939,21 @@ async function showSlide(i) {
     else { P.playing = false; renderPlayBtn(); }
   };
   if (!spoke) {
-    try {
-      const u = new SpeechSynthesisUtterance(plainT.replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu, ""));
-      u.voice = arVoice; u.lang = arVoice.lang; u.rate = 1.02; u.pitch = 1.3;
-      u.onend = u.onerror = () => { spoke = true; settle(); };
-      speechSynthesis.speak(u);
-    } catch (e) { spoke = true; }
+    const voiceFailed = () => { if (tok.dead) return; spoke = true; settle(); voiceHelp(true); };
+    // a short gap after cancel(): some browsers silently drop a speak() that follows it at once
+    setTimeout(() => {
+      if (tok.dead) return;
+      try {
+        const u = new SpeechSynthesisUtterance(plainT.replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu, ""));
+        let started = false;
+        u.voice = arVoice; u.lang = arVoice.lang; u.rate = 1.02; u.pitch = 1.3;
+        u.onstart = () => { started = true; };
+        u.onend = () => { spoke = true; settle(); };
+        u.onerror = e => { if (e.error === "interrupted" || e.error === "canceled") { spoke = true; settle(); } else voiceFailed(); };
+        speechSynthesis.speak(u);
+        setTimeout(() => { if (!started && !spoke) voiceFailed(); }, 4000);
+      } catch (e) { voiceFailed(); }
+    }, 150);
   }
   const afterText = () => {
     if (sl.code) {
@@ -884,7 +962,7 @@ async function showSlide(i) {
         if (tok.dead) return;
         n = reduce ? code.length : Math.min(code.length, n + 3);
         pre.innerHTML = hl(code.slice(0, n)) + (n < code.length ? '<span class="caret" style="background:var(--amber)"></span>' : "");
-        floor.style.minHeight = Math.max(150, scr.offsetHeight + 24) + "px";
+        floor.style.minHeight = Math.max(200, scr.offsetHeight + 24) + "px";
         if (n < code.length) setTimeout(step, 22); else { typed = true; setPose("point", "smile"); settle(); }
       };
       pre.textContent = ""; step();
@@ -892,10 +970,10 @@ async function showSlide(i) {
   };
   typeInto(txt, sl.html, tok, 2, afterText);
 }
-function voiceHelp() {
+function voiceHelp(failed = false) {
   const box = $("voiceHelp"); if (!box) return;
-  box.hidden = !box.hidden;
-  box.innerHTML = `<b>صوت روبيكو يحتاج صوت عربي في جهازك:</b>
+  box.hidden = failed ? false : !box.hidden;
+  box.innerHTML = `<b>${failed ? "المتصفح ما قدر يشغّل صوت روبيكو. تأكدي إن صوت الجهاز والتبويب مو مكتوم، أو جربي هذي الحلول:" : "صوت روبيكو يحتاج صوت عربي في جهازك:"}</b>
     <ul>
       <li><b>الأسهل:</b> افتحي اللعبة في متصفح <b>Microsoft Edge</b>، فيه أصوات عربية جاهزة وواضحة.</li>
       <li><b>ويندوز:</b> الإعدادات ← الوقت واللغة ← الكلام ← إضافة أصوات ← العربية (السعودية).</li>
@@ -909,19 +987,25 @@ $("lesson").addEventListener("click", e => {
   if (!player) return;
   const t = e.target;
   if (t.closest("#sbubble") && !t.closest("#voiceHelp")) { if (player.token.skip && !player.done) { player.token.skipped = true; player.token.skip(); } return; }
-  if (t.closest("#pNext")) { player.playing = true; showSlide(Math.min(player.i + 1, player.slides.length - 1)); return; }
-  if (t.closest("#pPrev")) { player.playing = true; showSlide(Math.max(player.i - 1, 0)); return; }
-  const seg = t.closest("#psegs button"); if (seg) { player.playing = true; showSlide(+seg.dataset.k); return; }
+  if (t.closest("#pSkip")) {
+    closeStage();
+    document.querySelector(".editor").scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+    if (matchMedia("(hover: hover)").matches) ta.focus({ preventScroll: true });
+    return;
+  }
+  if (t.closest("#pNext")) { showSlide(Math.min(player.i + 1, player.slides.length - 1)); return; }
+  if (t.closest("#pPrev")) { showSlide(Math.max(player.i - 1, 0)); return; }
+  const seg = t.closest("#psegs button"); if (seg) { showSlide(+seg.dataset.k); return; }
   if (t.closest("#pPlay")) {
     const atEnd = !player.playing && player.i === player.slides.length - 1 && player.done;
-    if (atEnd) { player.playing = true; player.seen.clear(); showSlide(0); return; }
+    if (atEnd) { player.seen.clear(); showSlide(0); return; }
     player.playing = !player.playing;
     if (!player.playing) { clearTimeout(player.timer); try { speechSynthesis.cancel(); } catch (e) {} actorEl().classList.remove("talking"); clearTimeout(player.token.gt); player.token.quiet = true; }
     else showSlide(player.done ? Math.min(player.i + 1, player.slides.length - 1) : player.i);
     renderPlayBtn(); return;
   }
   if (t.closest("#pVoice") && !arVoice) { voiceHelp(); return; }
-  if (t.closest("#actor")) { oneShot("spin", 650); sfx("boing"); return; }
+  if (t.closest("#actor")) { oneShot("twirl", 650); sfx("boing"); return; }
   if (t.closest("#pVoice")) {
     voiceOn = !voiceOn; try { localStorage.setItem("robiko.voice", voiceOn ? "on" : "off"); } catch (e) {}
     if (voiceOn && !soundOn) { soundOn = true; try { localStorage.setItem("robiko.sound", "on"); } catch (e) {} renderSoundBtn(); }
@@ -934,6 +1018,10 @@ $("lesson").addEventListener("click", e => {
 });
 $("lesson").addEventListener("click", e => {
   const b = e.target.closest(".mtabs button"); if (b) loadLevel(+b.dataset.i);
+  if (e.target.closest("#pReplay")) { closedStages.delete(cur); startPlayer(true); }
+});
+$("toCode").addEventListener("click", () => {
+  document.querySelector(".editor").scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smooth" });
 });
 
 function sizeBoard() {
@@ -992,7 +1080,7 @@ function resetBoard() {
 window.addEventListener("resize", () => {
   sizeBoard();
   const a = $("actor"), f = $("floor");
-  if (a && f && a.dataset.x) { const x = Math.min(1, +a.dataset.x); a.style.left = (f.clientWidth - a.offsetWidth) * x + "px"; moveTail(x); }
+  if (a && f && f.clientWidth && a.dataset.x) { const x = Math.min(1, +a.dataset.x); drawGround(); placeActor(x); moveTail(x); }
 });
 
 /* ---------- editor ---------- */
@@ -1002,7 +1090,7 @@ function syncEditor() {
   const n = ta.value.split("\n").length;
   $("gutter").textContent = Array.from({ length: n }, (_, i) => i + 1).join("\n");
   const lines = Math.max(14, n + 2);
-  document.querySelector(".code-wrap").style.height = `calc(${lines} * 1.6 * 14px + 28px)`;
+  document.querySelector(".code-wrap").style.height = `calc(${lines} * 1.6 * var(--code-fs) + 28px)`;
   syncScroll();
 }
 function syncScroll() { $("hl").scrollTop = ta.scrollTop; $("hl").scrollLeft = ta.scrollLeft; $("gutter").scrollTop = ta.scrollTop; }
@@ -1092,9 +1180,17 @@ async function toggleRun() {
   const token = runToken = { cancel: false };
   $("runBtn").classList.add("stop"); $("runLabel").textContent = "إيقاف";
   resetBoard(); clearLog();
+  closeStage();
+  // on phones the board sits under the editor: bring it into view so the run can be watched
+  if (matchMedia("(max-width: 880px)").matches) document.querySelector(".boardp").scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smooth" });
   const res = await execute(code, l);
 
-  const finish = () => { runToken = null; $("runBtn").classList.remove("stop"); $("runLabel").textContent = "تشغيل"; };
+  let won = false;
+  const finish = () => {
+    if (!won && !token.cancel) { failedRuns[l.id] = (failedRuns[l.id] || 0) + 1; updateSolBtn(); }
+    if (runToken !== token) return;
+    runToken = null; $("runBtn").classList.remove("stop"); $("runLabel").textContent = "تشغيل";
+  };
 
   if (res.fatal) { log(res.fatal, "err"); return finish(); }
   if (res.timeout) { log("الكود اشتغل وقت طويل وما خلص. عندك حلقة ما تنتهي؟ تأكدي أن شرط while يصير false في وقت ما.", "err"); return finish(); }
@@ -1138,8 +1234,16 @@ async function toggleRun() {
   for (const n of l.needs || []) if (!n.re.test(clean)) { log(n.msg, "err"); return finish(); }
   if (l.check) { const msg = l.check(res, clean); if (msg) { log(msg, "err"); return finish(); } }
 
+  won = true;
   win();
   finish();
+}
+
+/* the solution stays out of the way until a hint or a couple of tries */
+const failedRuns = {}, hintsSeen = new Set();
+function updateSolBtn() {
+  const id = LEVELS[cur].id;
+  $("solBtn").hidden = !(isDone(cur) || hintsSeen.has(id) || (failedRuns[id] || 0) >= 2);
 }
 
 let nextAction = null;
@@ -1169,7 +1273,7 @@ function win() {
   log("ممتاز! خلّصتي المهمة.", "ok");
   const wasPlanetDone = planetDone(l.p);
   if (!store.done.includes(l.id)) store.done.push(l.id);
-  save(); renderStrip(); renderMissionTabs();
+  save(); renderStrip(); renderMissionTabs(); updateSolBtn();
   const lastInPlanet = l.m === pl.missions.length - 1;
   if (!lastInPlanet) {
     $("winText").textContent = `خلّصتي المهمة ${l.m + 1} من ${pl.missions.length} في كوكب ${pl.title}.`;
@@ -1201,6 +1305,7 @@ $("hintBtn").addEventListener("click", () => {
   const box = $("hintbox");
   box.innerHTML = `<b>تلميح:</b> ${LEVELS[cur].hint}`;
   box.hidden = !box.hidden;
+  if (!box.hidden) { hintsSeen.add(LEVELS[cur].id); updateSolBtn(); }
 });
 $("solBtn").addEventListener("click", () => {
   if (!solArmed) {
@@ -1226,6 +1331,7 @@ function loadLevel(i) {
   $("boardTitle").textContent = l.mode === "console" ? "الروبوت يسمعك" : `المهمة ${l.m + 1} · ${l.title}`;
   ta.value = store.drafts[l.id] != null ? store.drafts[l.id] : l.starter;
   syncEditor();
+  updateSolBtn();
   $("hintbox").hidden = true;
   buildBoard();
   clearLog();
