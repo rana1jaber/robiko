@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="روبيكو: لعبة عربية مجانية لتعلم JavaScript من الصفر، حركي الروبوت بكود حقيقي عبر 9 كواكب و29 مهمة.">
+<title>روبيكو</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app" dir="rtl">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="6" y="11" width="28" height="23" rx="7" fill="#F2A93B"/><rect x="10" y="16" width="20" height="11" rx="4" fill="#0F2229"/><circle cx="16" cy="21.5" r="2.4" fill="#6EE7B7"/><circle cx="24" cy="21.5" r="2.4" fill="#6EE7B7"/><rect x="19" y="4" width="2" height="7" fill="#F2A93B"/><circle cx="20" cy="4" r="2.6" fill="#FF7A8A"/></svg>
+      <div>
+        <h1>روبيكو</h1>
+        <p>حرّكي الروبوت بكود JavaScript حقيقي، مرحلة بعد مرحلة</p>
+      </div>
+    </div>
+    <div class="top-end">
+      <div class="progress"><span id="progText">0 / 9</span><div class="bar"><i id="progBar" style="width:0%"></i></div></div>
+      <button class="btn sound-btn" id="soundBtn" type="button" aria-label="الصوت"></button>
+      <button class="btn map-btn" id="mapBtn" type="button" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/><ellipse cx="10" cy="10" rx="9" ry="3" fill="none" stroke="currentColor" stroke-width="1.3" transform="rotate(-20 10 10)"/></svg>خريطة المجرة</button>
+    </div>
+  </header>
+
+  <section class="mapview" id="mapView" hidden>
+    <div class="map-head">
+      <div>
+        <h2>خريطة المجرة</h2>
+        <p>كل كوكب مرحلة. اضغطي على أي كوكب وانطلقي.</p>
+      </div>
+      <div class="map-tools">
+      <button class="btn" id="galaxyBtn" type="button" hidden>عرض المجرة كاملة</button>
+      <div class="legend">
+        <span><i class="lg done"></i>مُستكشَف</span>
+        <span><i class="lg cur"></i>أنتِ هنا</span>
+        <span><i class="lg todo"></i>بانتظارك</span>
+      </div>
+      </div>
+    </div>
+    <div class="map-frame" id="mapFrame"></div>
+    <div class="arrive" id="arriveBar" hidden>
+      <span id="arriveText"></span>
+      <button class="btn primary" id="arriveGo" type="button">ابدئي المهمة</button>
+    </div>
+  </section>
+
+  <main class="layout" id="gameView">
+    <section class="panel lesson" id="lesson"></section>
+
+    <section class="panel editor">
+      <div class="ed-bar">
+        <span class="fname">robot.js</span>
+        <div class="ed-actions">
+          <button class="btn primary" id="runBtn" type="button"><span class="tri"></span><span id="runLabel">تشغيل</span> <kbd>Ctrl+Enter</kbd></button>
+          <button class="btn" id="hintBtn" type="button">تلميح</button>
+          <button class="btn" id="solBtn" type="button">الحل</button>
+          <button class="btn" id="resetBtn" type="button">كود البداية</button>
+        </div>
+      </div>
+      <div class="code-wrap">
+        <div class="gutter" id="gutter">1</div>
+        <div class="code-area">
+          <pre id="hl" aria-hidden="true"></pre>
+          <textarea id="code" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" aria-label="محرر الكود"></textarea>
+        </div>
+      </div>
+      <div class="hintbox" id="hintbox" hidden></div>
+    </section>
+
+    <div class="side">
+    <section class="panel boardp">
+      <div class="b-head">
+        <span class="lvl" id="boardTitle"></span>
+        <span class="chip" id="gemChip" hidden></span>
+      </div>
+      <div class="board-wrap" id="boardWrap"><div class="board" id="board"></div></div>
+      <div class="overlay" id="overlay" hidden>
+        <div>
+          <h3>أحسنتِ!</h3>
+          <p id="winText"></p>
+          <div class="ov-actions">
+            <button class="btn primary" id="nextBtn" type="button">انطلقي للكوكب التالي</button>
+            <button class="btn" id="stayBtn" type="button">أعيدي المهمة</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel console">
+      <div class="c-head"><strong>رسائل الروبوت</strong><span>console</span></div>
+      <ul class="log" id="log"></ul>
+    </section>
+    </div>
+  </main>
+</div>
+
+<script type="text/plain" id="runtime">
+var __G = __D.grid, __rows = __G.length, __cols = __G[0].length;
+var __r = __D.start[0], __c = __D.start[1];
+var __gems = {}, __gemCount = 0, __ev = [], __ops = 0;
+for (var __i = 0; __i < __rows; __i++) for (var __j = 0; __j < __cols; __j++) if (__G[__i][__j] === '*') { __gems[__i + ',' + __j] = 1; __gemCount++; }
+var __DIRS = { right: [0, 1], left: [0, -1], up: [-1, 0], down: [1, 0] };
+function __fail(kind, extra) { var e = new Error(kind); e.__kind = kind; e.__extra = extra; throw e; }
+function __tick() { if (++__ops > 3000) __fail('limit'); }
+function __wall(r, c) { return r < 0 || c < 0 || r >= __rows || c >= __cols || __G[r][c] === '#'; }
+function __dir(d) { if (typeof d !== 'string' || !__DIRS[d]) __fail('baddir', String(d)); return __DIRS[d]; }
+function move(d) { __tick(); var v = __dir(d); var nr = __r + v[0], nc = __c + v[1]; if (__wall(nr, nc)) { __ev.push({ t: 'crash', dir: d }); __fail('crash', d); } __r = nr; __c = nc; __ev.push({ t: 'move', r: __r, c: __c, dir: d }); }
+function right() { move('right'); }
+function left() { move('left'); }
+function up() { move('up'); }
+function down() { move('down'); }
+function canMove(d) { __tick(); var v = __dir(d); return !__wall(__r + v[0], __c + v[1]); }
+function gemHere() { __tick(); return !!__gems[__r + ',' + __c]; }
+function pick() { __tick(); var k = __r + ',' + __c; if (!__gems[k]) __fail('nogem'); delete __gems[k]; __gemCount--; __ev.push({ t: 'pick', r: __r, c: __c }); }
+function __fmt(x) { if (typeof x === 'string') return x; try { var s = JSON.stringify(x); return s === undefined ? String(x) : s; } catch (e) { return String(x); } }
+function say() { __tick(); __ev.push({ t: 'say', text: Array.prototype.map.call(arguments, __fmt).join(' ') }); }
+var console = { log: say, info: say, warn: say, error: say };
+function __done(err) {
+  postMessage({ events: __ev, pos: [__r, __c], gemsLeft: __gemCount,
+    err: err ? { kind: err.__kind || null, extra: err.__extra == null ? null : String(err.__extra), name: err.name || 'Error', message: String(err.message), stack: String(err.stack || '') } : null });
+}
+</script>
+
+<script src="levels.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
