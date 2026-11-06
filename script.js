@@ -44,7 +44,7 @@ function hl(src) {
   }
   return out + esc(src.slice(last));
 }
-const DIR_AR = { right: "لليمين", left: "لليسار", up: "لفوق", down: "لتحت" };
+const DIR_AR = { right: "إلى اليمين", left: "إلى اليسار", up: "إلى الأعلى", down: "إلى الأسفل" };
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -259,7 +259,7 @@ function renderMap(from = null) {
     setTimeout(async () => {
       await setFocus(cp, true);
       traveling = false;
-      if (!reduce) botSay(pick(["هلا! 👋", "جاهزة نبرمج؟", "يلا نبدأ!"]), 2600);
+      if (!reduce) botSay(pick(["أهلًا! 👋", "هل أنتِ جاهزة للبرمجة؟", "هيا نبدأ!"]), 2600);
     }, reduce ? 0 : 350);
   }
 }
@@ -267,9 +267,9 @@ function renderMap(from = null) {
 let mapGeo = null, traveling = false;
 const SVGNS = "http://www.w3.org/2000/svg";
 const pick = a => a[Math.floor(Math.random() * a.length)];
-const STEP_LINES = ["يلا!", "مهمة جديدة!", "هيا بنا!", "أنا جاهز!", "خطوة كمان!"];
-const LAND_LINES = ["وصلنا! 🚀", "كوكب جديد!", "واااو!", "هبوط ناجح!"];
-const POKE_LINES = ["لا تدغدغيني! 😆", "أحب الكود 💛", "for for for 🌀", "console.log('هلا')", "أنا روبيكو!", "يلا نبرمج!", "بطاريتي 100%", "قيمتي true 😎"];
+const STEP_LINES = ["هيا!", "مهمة جديدة!", "هيا بنا!", "أنا جاهز!", "خطوة أخرى!"];
+const LAND_LINES = ["وصلنا! 🚀", "كوكب جديد!", "رائع!", "هبوط ناجح!"];
+const POKE_LINES = ["لا تدغدغيني! 😆", "أحب الكود 💛", "for for for 🌀", "console.log('مرحبًا')", "أنا روبيكو!", "هيا نبرمج!", "بطاريتي 100%", "قيمتي true 😎"];
 function fxLayer() { return $("mapFrame").querySelector("#fx"); }
 function puffs(x, y, n) {
   if (reduce) return;
@@ -329,7 +329,7 @@ function renderSoundBtn() {
 }
 $("soundBtn").addEventListener("click", () => {
   soundOn = !soundOn; try { localStorage.setItem("robiko.sound", soundOn ? "on" : "off"); } catch (e) {}
-  renderSoundBtn(); if (soundOn) sfx("pop"); else { try { speechSynthesis.cancel(); } catch (e) {} } renderVoiceBtn();
+  renderSoundBtn(); if (soundOn) sfx("pop"); else { hush(); } renderVoiceBtn();
 });
 function tone(f1, f2, dur, type = "sine", vol = .12, at = 0) {
   const t = actx.currentTime + at, o = actx.createOscillator(), g = actx.createGain();
@@ -629,8 +629,8 @@ function showStartBar() {
   const allDone = firstOpen < 0, first = !store.done.length && cur === 0;
   startTarget = !allDone && isDone(cur) ? firstOpen : cur;
   const l = LEVELS[startTarget];
-  $("arriveText").textContent = allDone ? "خلّصتي المجرة كاملة! تقدرين تراجعين أي مهمة." : first ? `أول مهمة: ${l.title}` : `مهمتك الحالية: ${l.title}`;
-  $("arriveGo").textContent = allDone ? "راجعي المهمة" : first ? "ابدئي المهمة الأولى" : "كملي من حيث وقفتي";
+  $("arriveText").textContent = allDone ? "أتممتِ المجرة كاملة! يمكنكِ مراجعة أي مهمة." : first ? `أول مهمة: ${l.title}` : `مهمتك الحالية: ${l.title}`;
+  $("arriveGo").textContent = allDone ? "راجعي المهمة" : first ? "ابدئي المهمة الأولى" : "تابعي من حيث توقفتِ";
   $("arriveBar").hidden = false;
 }
 function showMap(from = null) {
@@ -711,6 +711,7 @@ function renderLesson() {
         <button class="ibtn" type="button" id="pNext" aria-label="التالي">◀</button>
         <div class="segs" id="psegs"></div>
         <button class="ibtn" type="button" id="pVoice">تشغيل الصوت</button>
+        <select class="ibtn voice-pick" id="pVoicePick" aria-label="اختيار صوت روبيكو" hidden></select>
         <button class="ibtn" type="button" id="pText" aria-pressed="false">النص كامل</button>
         <button class="ibtn" type="button" id="pSkip">تخطي الشرح</button>
       </div>
@@ -724,10 +725,10 @@ function renderLesson() {
     <details class="ref">
       <summary>كل أوامر الروبوت</summary>
       <div class="ref-grid">
-        <code>right() left() up() down()</code><span>تحريك خانة وحدة</span>
+        <code>right() left() up() down()</code><span>تحريك خانة واحدة</span>
         <code>move("right")</code><span>تحريك باتجاه مكتوب كنص</span>
-        <code>canMove("down")</code><span>هل الطريق مفتوح؟ ترجع true أو false</span>
-        <code>gemHere()</code><span>هل فيه جوهرة تحت الروبوت؟</span>
+        <code>canMove("down")</code><span>هل الطريق مفتوح؟ تعيد true أو false</span>
+        <code>gemHere()</code><span>هل توجد جوهرة تحت الروبوت؟</span>
         <code>pick()</code><span>التقاط الجوهرة</span>
         <code>say(قيمة)</code><span>الروبوت يقول القيمة</span>
         <code>console.log(قيمة)</code><span>يطبع في الكونسول (رسائل الروبوت)</span>
@@ -749,21 +750,38 @@ function closeStage() {
   if (s) s.hidden = true;
   if (r) r.hidden = false;
 }
-let arVoice = null;
+/* recorded clips live in audio/<mission id>/<slide>.mp3 and audio/common/example.mp3;
+   a slide with no clip falls back to the browser's Arabic voice */
+let curClip = null, recorded = false;
+function hush() {
+  try { speechSynthesis.cancel(); } catch (e) {}
+  const c = curClip;
+  if (!c) return;
+  curClip = null;
+  c.onerror = null;
+  c.pause();
+  if (c.onended) c.onended();
+}
+let arVoice = null, arVoices = [];
 function findVoice() {
   try {
-    const vs = speechSynthesis.getVoices().filter(v => /^ar/i.test(v.lang));
-    const score = v => (/online|natural|neural/i.test(v.name) ? 4 : 0) + (/google/i.test(v.name) ? 2 : 0) + (/SA/i.test(v.lang) ? 1 : 0);
-    arVoice = vs.sort((x, y) => score(y) - score(x))[0] || null;
-  } catch (e) { arVoice = null; }
+    const score = v => (/online|natural|neural/i.test(v.name) ? 4 : 0) + (/google/i.test(v.name) ? 2 : 0) + (/SA/i.test(v.lang) ? 3 : 0);
+    arVoices = speechSynthesis.getVoices().filter(v => /^ar/i.test(v.lang)).sort((x, y) => score(y) - score(x));
+    let saved = null;
+    try { saved = localStorage.getItem("robiko.voiceName"); } catch (e) {}
+    arVoice = arVoices.find(v => v.name === saved) || arVoices[0] || null;
+  } catch (e) { arVoices = []; arVoice = null; }
 }
+const voiceLabel = v => v.name.replace(/^Microsoft\s+/, "").replace(/\s*Online\s*\(Natural\)/i, "").replace(/\s*-\s*Arabic\s*/i, " ");
+// read the sentence, not the code punctuation around it
+const spoken = t => t.replace(/[\u{1F300}-\u{1FAFF}☀-➿]/gu, "").replace(/\/\/|\(\)|[(){}\[\];=<>"`]/g, " ").replace(/\s+/g, " ").trim();
 try { findVoice(); speechSynthesis.onvoiceschanged = () => { findVoice(); renderVoiceBtn(); }; } catch (e) {}
 const plain = h => { const d = document.createElement("div"); d.innerHTML = h.replace(/<br\s*\/?>/g, " "); return d.textContent.replace(/\s+/g, " ").trim(); };
 function stopPlayer() {
   if (!player) return;
   player.token.dead = true;
   clearTimeout(player.timer); clearTimeout(player.token.gt);
-  try { speechSynthesis.cancel(); } catch (e) {}
+  hush();
   const pr = $("actor"); if (pr) pr.classList.remove("talking");
   player = null;
 }
@@ -775,8 +793,8 @@ function startPlayer(force = false) {
   if (closed) return;
   const l = LEVELS[cur];
   const slides = l.lesson.map(h => ({ html: h }));
-  slides.push({ html: "شوفي المثال هذا 👇 اقرئيه سطر سطر، وانتبهي للتعليقات بعد <code>//</code>.", code: l.sample });
-  slides.push({ html: `<b>مهمتك:</b> ${l.task} يلا جربي في المحرر! 💪` });
+  slides.push({ html: "انظري إلى هذا المثال 👇 اقرئيه سطرًا سطرًا، وانتبهي للتعليقات بعد <code>//</code>.", code: l.sample });
+  slides.push({ html: `<b>مهمتك:</b> ${l.task} 💪` });
   player = { slides, i: 0, playing: false, token: {}, seen: new Set() };
   $("psegs").innerHTML = slides.map((_, k) => `<button type="button" data-k="${k}" aria-label="الجزء ${k + 1}"></button>`).join("");
   renderVoiceBtn();
@@ -788,9 +806,14 @@ function startPlayer(force = false) {
 }
 function renderVoiceBtn() {
   const b = $("pVoice"); if (!b) return;
-  const on = !!(arVoice && voiceOn && soundOn);
+  const on = !!((arVoice || recorded) && voiceOn && soundOn);
   b.setAttribute("aria-pressed", on ? "true" : "false");
   b.textContent = on ? "كتم الصوت" : "تشغيل الصوت";
+  const sel = $("pVoicePick");
+  if (sel) {
+    sel.hidden = recorded || arVoices.length < 2;
+    sel.innerHTML = arVoices.map((v, k) => `<option value="${k}"${v === arVoice ? " selected" : ""}>${esc(voiceLabel(v))}</option>`).join("");
+  }
 }
 function renderPlayBtn() {
   const b = $("pPlay"); if (!b || !player) return;
@@ -815,7 +838,7 @@ function typeInto(el, html, token, perTick, onDone) {
       const [n, t] = nodes[ni];
       n.textContent = t.slice(0, ++ci);
       if (ci >= t.length) { ni++; ci = 0; }
-      if (++count % 7 === 0 && !(voiceOn && arVoice)) sfx("blip");
+      if (++count % 7 === 0 && !(voiceOn && (arVoice || recorded))) sfx("blip");
     }
     if (ni >= nodes.length) { caret.remove(); onDone(); return; }
     setTimeout(tick, 28);
@@ -893,7 +916,7 @@ async function showSlide(i) {
   if (!player) return;
   const P = player, sl = P.slides[i];
   P.token.dead = true; clearTimeout(P.timer); clearTimeout(P.token.gt);
-  try { speechSynthesis.cancel(); } catch (e) {}
+  hush();
   P.token = {}; P.i = i; P.done = false; P.seen.add(i);
   const tok = P.token, a = actorEl(), txt = $("stxt"), scr = $("pscreen"), pre = $("psample"), floor = $("floor");
   [...$("psegs").children].forEach((b, k) => { b.className = k === i ? "on" : P.seen.has(k) ? "seen" : ""; });
@@ -927,7 +950,7 @@ async function showSlide(i) {
       if (!sl.code && !last) gestureLoop(tok);
     }
   });
-  let typed = false, spoke = !(voiceOn && soundOn && arVoice);
+  let typed = false, spoke = !(voiceOn && soundOn);
   const settle = () => {
     if (tok.dead || !typed || !spoke) return;
     tok.quiet = true; clearTimeout(tok.gt);
@@ -939,14 +962,20 @@ async function showSlide(i) {
     else { P.playing = false; renderPlayBtn(); }
   };
   if (!spoke) {
-    const voiceFailed = () => { if (tok.dead) return; spoke = true; settle(); voiceHelp(true); };
-    // a short gap after cancel(): some browsers silently drop a speak() that follows it at once
-    setTimeout(() => {
+    const voiceFailed = () => {
       if (tok.dead) return;
+      spoke = true;
+      if (!arVoice) { voiceOn = false; renderVoiceBtn(); } // so the next press tries again
+      settle(); voiceHelp(true);
+    };
+    // a short gap after cancel(): some browsers silently drop a speak() that follows it at once
+    const speakWithVoice = () => setTimeout(() => {
+      if (tok.dead) return;
+      if (!arVoice) { voiceFailed(); return; }
       try {
-        const u = new SpeechSynthesisUtterance(plainT.replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu, ""));
+        const u = new SpeechSynthesisUtterance(spoken(plainT));
         let started = false;
-        u.voice = arVoice; u.lang = arVoice.lang; u.rate = 1.02; u.pitch = 1.3;
+        u.voice = arVoice; u.lang = arVoice.lang; u.rate = .95; u.pitch = 1;
         u.onstart = () => { started = true; };
         u.onend = () => { spoke = true; settle(); };
         u.onerror = e => { if (e.error === "interrupted" || e.error === "canceled") { spoke = true; settle(); } else voiceFailed(); };
@@ -954,6 +983,19 @@ async function showSlide(i) {
         setTimeout(() => { if (!started && !spoke) voiceFailed(); }, 4000);
       } catch (e) { voiceFailed(); }
     }, 150);
+    const clip = new Audio(sl.code ? "audio/common/example.mp3" : `audio/${LEVELS[cur].id}/${i + 1}.mp3`);
+    let fell = false;
+    const noClip = () => {
+      if (fell || tok.dead || curClip !== clip) return;
+      fell = true; curClip = null;
+      speakWithVoice();
+    };
+    curClip = clip;
+    clip.onended = () => { if (curClip === clip) curClip = null; spoke = true; settle(); };
+    clip.onerror = noClip;
+    clip.onplaying = () => { if (!recorded) { recorded = true; renderVoiceBtn(); } };
+    const playing = clip.play();
+    if (playing) playing.catch(noClip);
   }
   const afterText = () => {
     if (sl.code) {
@@ -973,15 +1015,15 @@ async function showSlide(i) {
 function voiceHelp(failed = false) {
   const box = $("voiceHelp"); if (!box) return;
   box.hidden = failed ? false : !box.hidden;
-  box.innerHTML = `<b>${failed ? "المتصفح ما قدر يشغّل صوت روبيكو. تأكدي إن صوت الجهاز والتبويب مو مكتوم، أو جربي هذي الحلول:" : "صوت روبيكو يحتاج صوت عربي في جهازك:"}</b>
+  box.innerHTML = `<b>${failed ? "تعذّر على المتصفح تشغيل صوت روبيكو. تأكدي أن صوت الجهاز والتبويب غير مكتوم، أو جرّبي هذه الحلول:" : "يحتاج صوت روبيكو إلى صوت عربي في جهازكِ:"}</b>
     <ul>
-      <li><b>الأسهل:</b> افتحي اللعبة في متصفح <b>Microsoft Edge</b>، فيه أصوات عربية جاهزة وواضحة.</li>
+      <li><b>الأسهل:</b> افتحي اللعبة في متصفح <b>Microsoft Edge</b>، ففيه أصوات عربية جاهزة وواضحة.</li>
       <li><b>ويندوز:</b> الإعدادات ← الوقت واللغة ← الكلام ← إضافة أصوات ← العربية (السعودية).</li>
       <li><b>ماك:</b> إعدادات النظام ← تسهيلات الاستخدام ← المحتوى المنطوق ← صوت النظام ← إدارة الأصوات ← العربية.</li>
       <li><b>آيفون:</b> الإعدادات ← تسهيلات الاستخدام ← المحتوى المنطوق ← الأصوات ← العربية.</li>
       <li><b>أندرويد:</b> الإعدادات ← تحويل النص إلى كلام ← محرك Google ← نزّلي اللغة العربية.</li>
     </ul>
-    بعدها حدّثي الصفحة، ويصير زر 🗣️ يشغّل صوت روبيكو.`;
+    ثم حدّثي الصفحة، وسيشغّل زر «تشغيل الصوت» صوت روبيكو.`;
 }
 $("lesson").addEventListener("click", e => {
   if (!player) return;
@@ -1000,21 +1042,29 @@ $("lesson").addEventListener("click", e => {
     const atEnd = !player.playing && player.i === player.slides.length - 1 && player.done;
     if (atEnd) { player.seen.clear(); showSlide(0); return; }
     player.playing = !player.playing;
-    if (!player.playing) { clearTimeout(player.timer); try { speechSynthesis.cancel(); } catch (e) {} actorEl().classList.remove("talking"); clearTimeout(player.token.gt); player.token.quiet = true; }
+    if (!player.playing) { clearTimeout(player.timer); hush(); actorEl().classList.remove("talking"); clearTimeout(player.token.gt); player.token.quiet = true; }
     else showSlide(player.done ? Math.min(player.i + 1, player.slides.length - 1) : player.i);
     renderPlayBtn(); return;
   }
-  if (t.closest("#pVoice") && !arVoice) { voiceHelp(); return; }
   if (t.closest("#actor")) { oneShot("twirl", 650); sfx("boing"); return; }
   if (t.closest("#pVoice")) {
     voiceOn = !voiceOn; try { localStorage.setItem("robiko.voice", voiceOn ? "on" : "off"); } catch (e) {}
     if (voiceOn && !soundOn) { soundOn = true; try { localStorage.setItem("robiko.sound", "on"); } catch (e) {} renderSoundBtn(); }
-    renderVoiceBtn(); if (!voiceOn) { try { speechSynthesis.cancel(); } catch (e) {} }
+    renderVoiceBtn(); if (!voiceOn) { hush(); }
     showSlide(player.i); return;
   }
   if (t.closest("#pText")) {
     const tr = $("ptranscript"), b = $("pText"); tr.hidden = !tr.hidden; b.setAttribute("aria-pressed", String(!tr.hidden)); return;
   }
+});
+$("lesson").addEventListener("change", e => {
+  if (e.target.id !== "pVoicePick" || !player) return;
+  arVoice = arVoices[+e.target.value] || arVoice;
+  voiceOn = true;
+  try { localStorage.setItem("robiko.voiceName", arVoice.name); localStorage.setItem("robiko.voice", "on"); } catch (err) {}
+  if (!soundOn) { soundOn = true; try { localStorage.setItem("robiko.sound", "on"); } catch (err) {} renderSoundBtn(); }
+  renderVoiceBtn();
+  showSlide(player.i);
 });
 $("lesson").addEventListener("click", e => {
   const b = e.target.closest(".mtabs button"); if (b) loadLevel(+b.dataset.i);
@@ -1160,18 +1210,18 @@ function explain(err, line) {
   const at = line ? ` (السطر ${line})` : "";
   switch (err.kind) {
     case "crash": return `اصطدم الروبوت بجدار وهو يتحرك ${DIR_AR[err.extra] || ""}${at}.`;
-    case "nogem": return `ناديتي pick() والروبوت مو فوق جوهرة${at}. تأكدي بـ if (gemHere()) قبلها.`;
+    case "nogem": return `استدعيتِ pick() والروبوت ليس فوق جوهرة${at}. تأكدي بـ if (gemHere()) قبلها.`;
     case "baddir": return `الاتجاه "${err.extra}" غير معروف${at}. استخدمي "right" أو "left" أو "up" أو "down" بين علامتي تنصيص.`;
-    case "limit": return "الروبوت نفّذ أكثر من 3000 أمر. غالبًا عندك حلقة ما تنتهي.";
+    case "limit": return "نفّذ الروبوت أكثر من 3000 أمر. على الأرجح لديكِ حلقة لا تنتهي.";
   }
   let m;
   if (err.name === "ReferenceError" && (m = err.message.match(/^(\S+) is not defined/)))
-    return `الاسم "${m[1]}" غير معروف${at}. تأكدي من الكتابة، الحروف الكبيرة والصغيرة تفرق (right غير Right).`;
+    return `الاسم "${m[1]}" غير معروف${at}. تأكدي من الكتابة، فالحروف الكبيرة والصغيرة مختلفة (right غير Right).`;
   if (err.name === "TypeError" && (m = err.message.match(/(\S+) is not a function/)))
-    return `"${m[1]}" مو دالة، فما ينفع تنادينها بأقواس ()${at}.`;
+    return `"${m[1]}" ليست دالة، فلا يمكن استدعاؤها بقوسين ()${at}.`;
   if (err.name === "TypeError" && /constant variable/.test(err.message))
-    return `حاولتي تغيرين قيمة متغير معرّف بـ const${at}. استخدمي let إذا القيمة بتتغير.`;
-  return `صار خطأ${at}: ${err.name}`;
+    return `حاولتِ تغيير قيمة متغير معرّف بـ const${at}. استخدمي let إذا كانت القيمة ستتغير.`;
+  return `حدث خطأ${at}: ${err.name}`;
 }
 
 async function toggleRun() {
@@ -1193,7 +1243,7 @@ async function toggleRun() {
   };
 
   if (res.fatal) { log(res.fatal, "err"); return finish(); }
-  if (res.timeout) { log("الكود اشتغل وقت طويل وما خلص. عندك حلقة ما تنتهي؟ تأكدي أن شرط while يصير false في وقت ما.", "err"); return finish(); }
+  if (res.timeout) { log("استغرق الكود وقتًا طويلًا ولم ينتهِ. هل لديكِ حلقة لا تنتهي؟ تأكدي أن شرط while يصبح false في وقت ما.", "err"); return finish(); }
   if (res.syntax) {
     const at = res.syntax.line && res.syntax.line > 0 ? ` في السطر ${res.syntax.line}` : "";
     log(`خطأ في كتابة الكود${at}. تأكدي أن كل قوس ( و { له قوس إغلاق، وأن النصوص بين علامات تنصيص.`, "err", res.syntax.message.replace(/^Uncaught\s*/, ""));
@@ -1203,7 +1253,7 @@ async function toggleRun() {
   const says = [];
   const delay = reduce ? 120 : 270;
   for (const e of res.events) {
-    if (token.cancel) { resetBoard(); log("أوقفتي التشغيل.", "info"); return finish(); }
+    if (token.cancel) { resetBoard(); log("أوقفتِ التشغيل.", "info"); return finish(); }
     if (e.t === "move") {
       placeBot(e.r, e.c, e.dir); cellEls[e.r][e.c].classList.add("visited"); sfx("step");
       await sleep(delay);
@@ -1228,8 +1278,8 @@ async function toggleRun() {
     return finish();
   }
   const atGoal = l.mode === "console" || (res.pos[0] === l.goal[0] && res.pos[1] === l.goal[1]);
-  if (!atGoal) { log("خلص الكود والروبوت ما وصل للعلم. أضيفي أوامر أكثر وجربي مرة ثانية.", "err"); return finish(); }
-  if (res.gemsLeft > 0) { log(`وصلتِ للعلم، بس باقي ${res.gemsLeft} من الجواهر ما انجمعت.`, "err"); return finish(); }
+  if (!atGoal) { log("انتهى الكود ولم يصل الروبوت إلى العلم. أضيفي مزيدًا من الأوامر وجرّبي مرة أخرى.", "err"); return finish(); }
+  if (res.gemsLeft > 0) { log(`وصلتِ إلى العلم، لكن بقي ${res.gemsLeft} من الجواهر لم تُجمع.`, "err"); return finish(); }
   const clean = code.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
   for (const n of l.needs || []) if (!n.re.test(clean)) { log(n.msg, "err"); return finish(); }
   if (l.check) { const msg = l.check(res, clean); if (msg) { log(msg, "err"); return finish(); } }
@@ -1268,29 +1318,29 @@ function win() {
   const l = LEVELS[cur], pl = PLANETS[l.p];
   bot.classList.add("win");
   sfx("win"); confetti();
-  bubble.textContent = pick(["يااااي! 🎉", "أحسنتِ!", "عبقرية! 🧠", "كود نظيف ✨", "رهيب!"]); bubble.hidden = false;
+  bubble.textContent = pick(["رائع! 🎉", "أحسنتِ!", "عبقرية! 🧠", "كود نظيف ✨", "مذهل!"]); bubble.hidden = false;
   setTimeout(() => { bubble.hidden = true; }, 1600);
-  log("ممتاز! خلّصتي المهمة.", "ok");
+  log("ممتاز! أتممتِ المهمة.", "ok");
   const wasPlanetDone = planetDone(l.p);
   if (!store.done.includes(l.id)) store.done.push(l.id);
   save(); renderStrip(); renderMissionTabs(); updateSolBtn();
   const lastInPlanet = l.m === pl.missions.length - 1;
   if (!lastInPlanet) {
-    $("winText").textContent = `خلّصتي المهمة ${l.m + 1} من ${pl.missions.length} في كوكب ${pl.title}.`;
+    $("winText").textContent = `أتممتِ المهمة ${l.m + 1} من ${pl.missions.length} في كوكب ${pl.title}.`;
     $("nextBtn").textContent = "المهمة التالية";
     nextAction = () => { const from = { p: l.p, k: l.m }; loadLevel(cur + 1); showMap(from); };
   } else if (!planetDone(l.p)) {
-    $("winText").textContent = `باقي مهمات ما خلصتيها في كوكب ${pl.title}.`;
-    $("nextBtn").textContent = "كملي الباقي";
+    $("winText").textContent = `بقيت مهمات لم تُتمّيها في كوكب ${pl.title}.`;
+    $("nextBtn").textContent = "أكملي الباقي";
     nextAction = () => { const from = { p: l.p, k: l.m }; loadLevel(nextInPlanet(l.p)); showMap(from); };
   } else if (l.p === PLANETS.length - 1) {
     const all = LEVELS.every((_, i) => isDone(i));
-    $("winText").textContent = all ? "خلّصتي المجرة كاملة! الحين تعرفين الأوامر والحلقات والمتغيرات والشروط والدوال والمصفوفات." : "خلّصتي التحدي الأخير! باقي مهمات في كواكب ثانية، شوفيها في الخريطة.";
+    $("winText").textContent = all ? "أتممتِ المجرة كاملة! أنتِ تعرفين الآن الأوامر والحلقات والمتغيرات والشروط والدوال والمصفوفات." : "أتممتِ التحدي الأخير! بقيت مهمات في كواكب أخرى، تجدينها في الخريطة.";
     $("nextBtn").textContent = "خريطة المجرة";
     if (!wasPlanetDone) justWon = l.p;
     nextAction = () => showMap();
   } else {
-    $("winText").textContent = `خلّصتي كوكب ${pl.title} كامل!`;
+    $("winText").textContent = `أتممتِ كوكب ${pl.title} كاملًا!`;
     $("nextBtn").textContent = "انطلقي للكوكب التالي";
     if (!wasPlanetDone) justWon = l.p;
     nextAction = () => { const from = { p: l.p, k: l.m }; loadLevel(nextInPlanet(l.p + 1)); showMap(from); };
@@ -1309,17 +1359,17 @@ $("hintBtn").addEventListener("click", () => {
 });
 $("solBtn").addEventListener("click", () => {
   if (!solArmed) {
-    solArmed = true; $("solBtn").textContent = "متأكدة؟ اضغطي مرة ثانية";
+    solArmed = true; $("solBtn").textContent = "هل أنتِ متأكدة؟ اضغطي مرة أخرى";
     setTimeout(() => { solArmed = false; $("solBtn").textContent = "الحل"; }, 3000);
     return;
   }
   solArmed = false; $("solBtn").textContent = "الحل";
   ta.value = LEVELS[cur].solution; ta.dispatchEvent(new Event("input"));
-  log("حطيت لك الحل في المحرر. اقرئيه سطر سطر، وبعدها اضغطي تشغيل.", "info");
+  log("وضعتُ لكِ الحل في المحرر. اقرئيه سطرًا سطرًا، ثم اضغطي تشغيل.", "info");
 });
 $("resetBtn").addEventListener("click", () => {
   ta.value = LEVELS[cur].starter; ta.dispatchEvent(new Event("input"));
-  log("رجع الكود لنقطة البداية.", "info");
+  log("عاد الكود إلى نقطة البداية.", "info");
 });
 
 function loadLevel(i) {
@@ -1335,7 +1385,7 @@ function loadLevel(i) {
   $("hintbox").hidden = true;
   buildBoard();
   clearLog();
-  log("اكتبي الكود واضغطي تشغيل. تقدرين تجربين قد ما تبين.", "info");
+  log("اكتبي الكود واضغطي تشغيل. يمكنكِ التجربة كما تشائين.", "info");
 }
 
 renderSoundBtn();

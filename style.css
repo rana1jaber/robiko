@@ -140,6 +140,7 @@ header.top { display: flex; align-items: center; justify-content: space-between;
 .ibtn.primary { background: var(--amber); color: var(--amber-ink); border-color: var(--amber); font-weight: 700; }
 .ibtn[aria-pressed="true"] { border-color: var(--mint); color: var(--mint); }
 .replay { margin-block: 4px; }
+.voice-pick { display: inline-block; max-width: 190px; cursor: pointer; }
 .ibtn:focus-visible, .pctrl .segs button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
 .transcript { position: relative; z-index: 1; border-top: 1px dashed var(--line); padding-top: 10px; font-size: 1rem; }
 .transcript p { margin: 0 0 8px; }
