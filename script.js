@@ -752,7 +752,7 @@ function closeStage() {
 }
 /* recorded clips live in audio/<mission id>/<slide>.mp3 and audio/common/example.mp3;
    a slide with no clip falls back to the browser's Arabic voice */
-let curClip = null, recorded = false;
+let curClip = null, recorded = false, clipFailed = false;
 function hush() {
   try { speechSynthesis.cancel(); } catch (e) {}
   const c = curClip;
@@ -811,7 +811,7 @@ function renderVoiceBtn() {
   b.textContent = on ? "كتم الصوت" : "تشغيل الصوت";
   const sel = $("pVoicePick");
   if (sel) {
-    sel.hidden = recorded || arVoices.length < 2;
+    sel.hidden = recorded || !clipFailed || arVoices.length < 2; // only offered once a clip has failed
     sel.innerHTML = arVoices.map((v, k) => `<option value="${k}"${v === arVoice ? " selected" : ""}>${esc(voiceLabel(v))}</option>`).join("");
   }
 }
@@ -988,6 +988,7 @@ async function showSlide(i) {
     const noClip = () => {
       if (fell || tok.dead || curClip !== clip) return;
       fell = true; curClip = null;
+      if (!clipFailed) { clipFailed = true; renderVoiceBtn(); }
       speakWithVoice();
     };
     curClip = clip;
